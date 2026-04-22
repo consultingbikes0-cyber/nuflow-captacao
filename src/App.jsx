@@ -125,8 +125,10 @@ export default function App() {
       }
       return true;
     } catch (err) {
-      console.warn('Photo validation error:', err);
-      return true; // Don't block on error
+      const msg = err?.name === 'AbortError' ? 'Timeout na verificação' : (err?.message || String(err));
+      console.warn('Photo validation error:', msg);
+      setError('Erro na verificação: ' + msg);
+      return false;
     } finally {
       setValidating(false);
     }
