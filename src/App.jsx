@@ -82,25 +82,40 @@ export default function App() {
     setValidating(true);
     setPhotoErrors([]);
     try {
-      // Convert photos to base64
+      // Compress and convert photos to base64
+      const compressImage = (file) => new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          // Max 400px wide for AI validation
+          const maxW = 400;
+          const ratio = Math.min(maxW / img.width, maxW / img.height, 1);
+          canvas.width = Math.round(img.width * ratio);
+          canvas.height = Math.round(img.height * ratio);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          const b64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+          resolve({ base64: b64, mediaType: 'image/jpeg' });
+        };
+        img.src = url;
+      });
+
       const photoData = await Promise.all(
-        photos.slice(0, 6).map(async (file) => {
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const b64 = reader.result.split(',')[1];
-              resolve({ base64: b64, mediaType: file.type || 'image/jpeg' });
-            };
-            reader.readAsDataURL(file);
-          });
-        })
+        photos.slice(0, 6).map(file => compressImage(file))
       );
 
+      // 25s timeout
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 25000);
       const res = await fetch('/.netlify/functions/validate-photos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ photos: photoData }),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
 
       const result = await res.json();
       if (!result.aprovado && result.resultados?.length > 0) {

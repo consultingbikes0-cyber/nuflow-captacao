@@ -5,3 +5,6 @@
 
 [functions]
   node_bundler = "esbuild"
+
+[functions."validate-photos"]
+  timeout = 26
