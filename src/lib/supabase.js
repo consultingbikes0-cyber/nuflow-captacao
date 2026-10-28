@@ -35,6 +35,7 @@ export async function saveSubmission(formData, photoUrls) {
     tamanho: formData.tamanho,
     tipo: formData.tipo,
     suspensao: formData.suspensao,
+    shock: formData.shock, // amortecedor: era preenchido no formulário mas não era salvo
     freios: formData.freios,
     relacao: formData.relacao,
     rodas: formData.rodas,
@@ -46,12 +47,30 @@ export async function saveSubmission(formData, photoUrls) {
     status: 'novo',
     criado_em: new Date().toISOString(),
   };
-  const { data, error } = await supabase.from('submissoes').insert([payload]).select().single();
+  // Sem .select(): o formulário público só tem permissão de INSERIR (leitura é só para o painel logado)
+  const { error } = await supabase.from('submissoes').insert([payload]);
   if (error) throw error;
-  return { data, description };
+  return { description };
 }
 
-export function generateDescription(formData) {
+// Converte o texto digitado pelo vendedor em texto puro antes de montar o HTML.
+// Sem isso, alguém poderia colocar código nos campos e ele iria parar no painel e na loja.
+function escapeHtml(v) {
+  return String(v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeFields(data) {
+  const out = {};
+  Object.keys(data || {}).forEach(k => {
+    const v = data[k];
+    out[k] = typeof v === 'string' ? escapeHtml(v) : v;
+  });
+  return out;
+}
+
+export function generateDescription(rawData) {
+  const formData = escapeFields(rawData);
   const marca  = (formData.marca  || '').toUpperCase();
   const modelo = (formData.modelo || '').toUpperCase();
   const ano    = formData.ano      || '';
@@ -89,7 +108,7 @@ export function generateDescription(formData) {
 
   const condicao = formData.observacoes
     ? `<p style="font-size:13px;color:#333333;line-height:1.6;margin:0;">${formData.observacoes}</p>`
-    : `<p style="font-size:13px;color:#333333;line-height:1.6;margin:0;">Bike seminova em ótimo estado geral, selecionada e verificada pela equipe Nuflow.</p>`;
+    : `<p style="font-size:13px;color:#333333;line-height:1.6;margin:0;">Bike seminova em bom estado geral, conforme informado pelo vendedor. Estado confirmado no laudo técnico antes da entrega.</p>`;
 
   return `<!--NUFLOW BIKES - DESCRICAO DE PRODUTO PREMIUM-->
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:720px;margin:0 auto;color:#1a1a1a;background:#ffffff;padding:0;">
@@ -104,7 +123,7 @@ export function generateDescription(formData) {
 
   <!-- INTRO -->
   <p style="font-size:14px;color:#444444;line-height:1.7;margin:0 0 20px 0;padding:0 20px;">
-    Uma das bikes mais desejadas do mercado, selecionada e verificada pela curadoria Nuflow. Pronta para trilhas, viagens e pedaladas de alto nível.
+    Uma das bikes mais desejadas do mercado, selecionada pela curadoria Nuflow. Pronta para trilhas, viagens e pedaladas de alto nível.
   </p>
 
   <!-- COMPONENTES -->
@@ -129,8 +148,8 @@ export function generateDescription(formData) {
   <div style="background:#f0f5ee;border:2px solid #111111;margin:2px 0;padding:14px 20px;display:flex;align-items:flex-start;gap:12px;">
     <span style="font-size:22px;flex-shrink:0;margin-top:1px;">✅</span>
     <div>
-      <p style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#202d18;margin:0 0 4px 0;">Certificado Nuflow</p>
-      <p style="font-size:12px;color:#444444;line-height:1.6;margin:0;">Esta bike passou por inspeção completa antes de chegar até você. Quadro, suspensão, freios, transmissão e componentes verificados.</p>
+      <p style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#202d18;margin:0 0 4px 0;">Laudo técnico antes da entrega</p>
+      <p style="font-size:12px;color:#444444;line-height:1.6;margin:0;">Antes de seguir para você, esta bike passa por um laudo técnico completo na Nuflow: quadro, suspensões, freios, transmissão e rodas. Qualquer ajuste necessário é feito nesse momento, pouco antes do envio. Assim ela chega pronta para pedalar, sem o desgaste de ficar parada depois da revisão.</p>
     </div>
   </div>
 
@@ -142,7 +161,7 @@ export function generateDescription(formData) {
     </div>
     <div style="background:#202d18;padding:10px 16px;border-radius:3px;">
       <p style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ffffff;margin:0 0 2px 0;">COMPRA SOMENTE PELO WHATSAPP</p>
-      <p style="font-size:11px;color:rgba(255,255,255,0.65);margin:0;">Laudo técnico + curadoria Nuflow + entrega nacional</p>
+      <p style="font-size:11px;color:rgba(255,255,255,0.65);margin:0;">Laudo técnico antes da entrega + curadoria Nuflow + entrega nacional</p>
     </div>
   </div>
 
