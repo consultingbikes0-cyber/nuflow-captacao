@@ -126,9 +126,10 @@ export default function App() {
       return true;
     } catch (err) {
       const msg = err?.name === 'AbortError' ? 'Timeout na verificação' : (err?.message || String(err));
-      console.warn('Photo validation error:', msg);
-      setError('Erro na verificação: ' + msg);
-      return false;
+      // Se a verificação por IA falhar ou demorar, deixa o vendedor enviar mesmo assim
+      // (a equipe revisa as fotos no painel). Bloquear aqui significava perder o lead.
+      console.warn('Photo validation error (envio liberado):', msg);
+      return true;
     } finally {
       setValidating(false);
     }
