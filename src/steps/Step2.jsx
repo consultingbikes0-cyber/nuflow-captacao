@@ -2,10 +2,11 @@ import React from 'react';
 import { Bike } from 'lucide-react';
 
 const TIPOS = ['MTB Full', 'MTB Hardtail', 'Speed / Road', 'Gravel', 'Enduro / DH', 'E-bike', 'Outro'];
-const TAMANHOS = ['XS', 'S', 'M', 'M/L', 'L', 'XL', 'XXL'];
-const ANOS = Array.from({ length: 14 }, (_, i) => String(2025 - i));
+const TAMANHOS = ['XS', 'S', 'M', 'M/L', 'L', 'XL', 'XXL', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
+const ANOS = Array.from({ length: 16 }, (_, i) => String(2027 - i));
 const MARCAS = ['Scott', 'Trek', 'Specialized', 'Giant', 'Cannondale', 'Santa Cruz', 'Yeti', 'Intense',
   'Norco', 'Rocky Mountain', 'Orbea', 'Merida', 'Sense', 'Soul', 'Caloi', 'Outro'];
+const MATERIAIS = ['Carbono', 'Alumínio', 'Titânio', 'Aço'];
 
 export default function Step2({ data, onChange }) {
   const set = (field, value) => onChange({ ...data, [field]: value });
@@ -71,6 +72,20 @@ export default function Step2({ data, onChange }) {
               className={`pill ${data.tamanho === s ? 'active' : ''}`}
               onClick={() => set('tamanho', s)}
             >{s}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="field-group">
+        <label>Material do quadro *</label>
+        <div className="pill-group">
+          {MATERIAIS.map(m => (
+            <button
+              key={m}
+              type="button"
+              className={`pill ${data.material === m ? 'active' : ''}`}
+              onClick={() => set('material', m)}
+            >{m}</button>
           ))}
         </div>
       </div>
