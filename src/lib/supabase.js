@@ -3,37 +3,6 @@ const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ===== Preço sugerido (Tabela de Preços do painel Nuflow) =====
-// O painel publica no Supabase o preço médio das bikes que a Nuflow já vendeu.
-// Aqui o formulário só pergunta por UMA bike de cada vez; se algo falhar, segue sem sugestão.
-export async function buscarPrecoSugerido(marca, modelo, ano) {
-  if (!marca || marca === 'Outro' || !modelo || modelo.trim().length < 2) return null;
-  try {
-    const { data, error } = await supabase.rpc('sugerir_preco', {
-      p_marca: marca, p_modelo: modelo, p_ano: ano || '',
-    });
-    if (error || !data || !data.length) return null;
-    const r = data[0];
-    const preco = Number(r.preco);
-    if (!(preco > 0)) return null;
-    return { marca: r.marca, modelo: r.modelo, ano: r.ano || '', preco, vendas: Number(r.vendas) || 1, mesmoAno: !!r.mesmo_ano };
-  } catch (e) {
-    return null;
-  }
-}
-
-// Modelos que a Nuflow já vendeu de uma marca, para sugerir enquanto a pessoa digita
-export async function buscarModelosReferencia(marca) {
-  if (!marca || marca === 'Outro') return [];
-  try {
-    const { data, error } = await supabase.rpc('modelos_referencia', { p_marca: marca });
-    if (error || !data) return [];
-    return data.map(r => r.modelo).filter(Boolean);
-  } catch (e) {
-    return [];
-  }
-}
-
 // Upload a single photo to Supabase Storage
 export async function uploadPhoto(file, submissionId, index) {
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
